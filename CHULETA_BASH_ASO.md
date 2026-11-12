@@ -1,472 +1,762 @@
-# 📘 CHULETA DE BASH SCRIPTING (ASIR / ASO)
-> **Formato ilustrativo:** Estructuras explicadas con ejemplos sencillos y reales (con `echo`, `date`, etc.) para que se vea exactamente qué poner en cada línea, sin ser un ejercicio de examen resuelto.
+# SISTEMAS OPERATIVOS · APUNTES DE REFERENCIA
+
+# Tema 1: Lenguajes de scripting en sistemas operativos
+
+## Índice
+
+1. [Qué es un script](#1-qué-es-un-script)
+2. [Creación, ejecución y depuración](#2-creación-ejecución-y-depuración)
+3. [Salida y comillas](#3-salida-y-comillas)
+4. [Variables y entrada](#4-variables-y-entrada)
+5. [Argumentos y variables especiales](#5-argumentos-y-variables-especiales)
+6. [Redirecciones y composición de órdenes](#6-redirecciones-y-composición-de-órdenes)
+7. [Condiciones](#7-condiciones)
+8. [Selección de opciones](#8-selección-de-opciones)
+9. [Operaciones aritméticas](#9-operaciones-aritméticas)
+10. [Bucles](#10-bucles)
+11. [Funciones](#11-funciones)
+12. [Códigos de salida y estructura segura](#12-códigos-de-salida-y-estructura-segura)
+13. [Automatización de tareas administrativas](#13-automatización-de-tareas-administrativas)
+14. [Menús con dialog](#14-menús-con-dialog)
+15. [Ejercicios propuestos](#15-ejercicios-propuestos)
+16. [Errores frecuentes](#16-errores-frecuentes)
+17. [Comprobaciones habituales en scripts](#17-comprobaciones-habituales-en-scripts)
+18. [Lista de comprobación](#18-lista-de-comprobación)
+* [Material complementario](#material-complementario)
 
 ---
 
-## 📌 ÍNDICE
-1. [Cabecera, Permisos, Ejecución y Depuración](#1-cabecera-permisos-ejecución-y-depuración)
-2. [Entrecomillados y Sustitución de Comandos](#2-entrecomillados-y-sustitución-de-comandos)
-3. [Entrada y Salida Estándar (echo, read, IFS)](#3-entrada-y-salida-estándar-echo-read-ifs)
-4. [Variables: Asignación, Especiales y de Entorno](#4-variables-asignación-especiales-y-de-entorno)
-5. [Aritmética: Enteros, Decimales y Aleatorios](#5-aritmética-enteros-decimales-y-aleatorios)
-6. [Metacaracteres y Utilidad basename](#6-metacaracteres-y-utilidad-basename)
-7. [Comparadores en Corchetes [ ... ]](#7-comparadores-en-corchetes---)
-8. [Estructuras Condicionales: IF y CASE con ejemplos claros](#8-estructuras-condicionales-if-y-case-con-ejemplos-claros)
-9. [Bucles: FOR, WHILE y UNTIL con ejemplos claros](#9-bucles-for-while-y-until-con-ejemplos-claros)
-10. [Menús Interactivos con SELECT](#10-menús-interactivos-con-select)
-11. [Funciones y Variables Locales](#11-funciones-y-variables-locales)
-12. [Salidas y Códigos de Retorno (exit vs return)](#12-salidas-y-códigos-de-retorno-exit-vs-return)
-13. [Cajas de Diálogo: DIALOG con ejemplos claros](#13-cajas-de-diálogo-dialog-con-ejemplos-claros)
-14. [Las 7 Trampas de Examen (Evita estos errores)](#14-las-7-trampas-de-examen-evita-estos-errores)
+## 1. Qué es un script
 
----
+Un script Bash es un fichero de texto con órdenes que el intérprete ejecuta secuencialmente. Permite automatizar tareas repetitivas del sistema operativo. La primera línea indica qué intérprete debe ejecutarlo:
 
-## 1. CABECERA, PERMISOS, EJECUCIÓN Y DEPURACIÓN
-
-### Shebang obligatorio (1ª línea siempre)
 ```bash
 #!/bin/bash
+
+echo "Hola, $USER"
 ```
 
-### Permisos y Ejecución en terminal
-```bash
-chmod +x script.sh          # Le da permiso de ejecución
-chmod 700 script.sh         # Modo seguro: solo tu usuario puede leer, escribir y ejecutar
-./script.sh                 # Ejecutarlo en la carpeta actual
-sh script.sh                # Otra forma de ejecutarlo llamando a la shell
-```
-*Si quieres ejecutarlo como un comando del sistema (sin poner `./`):* se mueve a `/usr/bin/` con `chmod 777 script.sh`.
+La línea `#!` se llama *shebang*. También es habitual encontrar `#!/bin/bash`. Guarda el fichero con extensión `.sh` y ejecútalo con Bash o dale permiso de ejecución:
 
-### Depuración paso a paso (Debug)
 ```bash
-sh -x script.sh             # Muestra en pantalla cada orden ejecutada (+) con sus valores reales
-sh -n script.sh             # Solo revisa si hay errores de sintaxis (no ejecuta nada)
-export PS4='xtrace-> '      # Cambia el símbolo '+' por 'xtrace-> ' en el modo depuración
+$ bash saludo.sh
+$ chmod u+x saludo.sh
+$ ./saludo.sh
+```
+
+`./` indica que el script está en el directorio actual. Para lanzarlo solo por su nombre, tendría que estar en un directorio de `PATH`. No es necesario mover scripts de prácticas a directorios del sistema ni darles permisos `777`.
+
+---
+
+## 2. Creación, ejecución y depuración
+
+Un script legible suele incluir una cabecera breve con su propósito, autor o versión, y una indicación de uso. Divide las tareas en pasos claros y evita órdenes innecesarias.
+
+Antes de ejecutar un script, comprueba su sintaxis:
+
+```bash
+$ bash -n script.sh
+```
+
+Para analizar su ejecución:
+
+```bash
+$ bash -x script.sh argumento
+```
+
+`-x` muestra las órdenes y expansiones antes de ejecutarlas. También se puede activar temporalmente desde el propio script con `set -x` y desactivar con `set +x`. La opción `-v` muestra las líneas leídas por Bash; `-n` comprueba la sintaxis sin ejecutar las órdenes.
+
+Depurar implica predecir el resultado, comprobarlo y explicar las diferencias. Cuando algo falla, revisa primero la sintaxis, los valores de las variables, los argumentos y el código de salida de cada orden.
+
+---
+
+## 3. Salida y comillas
+
+`echo` muestra texto y añade un salto de línea:
+
+```bash
+echo "Usuario: $USER"
+echo "Fichero: $fichero"
+echo "Líneas: $lineas"
+```
+
+Utiliza comillas dobles para mostrar variables y conservar los espacios de su contenido.
+
+Las comillas cambian cómo interpreta Bash el contenido:
+
+| Forma | Efecto |
+| :--- | :--- |
+| `'texto literal'` | Conserva literalmente el contenido; no expande variables. |
+| `"texto $variable"` | Expande variables y sustituciones, pero conserva el texto como una palabra. |
+| `$(orden)` | Ejecuta una orden y sustituye la expresión por su salida. |
+| `\` | Protege el carácter siguiente o permite continuar una orden en otra línea. |
+
+**Ejemplo:**
+
+```bash
+nombre="Ana Pérez"
+echo 'Hola, $nombre'
+echo "Hola, $nombre"
+fecha=$(date '+%d/%m/%Y')
+echo "Fecha: $fecha"
+```
+
+La primera línea imprime `$nombre` literalmente; la segunda imprime su valor. Usa comillas dobles al expandir variables, especialmente en rutas y argumentos: `"$fichero"` evita que los espacios dividan una ruta en varias palabras.
+
+---
+
+## 4. Variables y entrada
+
+Asigna valores sin espacios alrededor del signo `=`:
+
+```bash
+nombre="Ana Pérez"
+numero=12
+directorio="/var/log"
+```
+
+Para utilizar el contenido de una variable, escribe `$nombre` o `${nombre}`. Las llaves delimitan el nombre cuando va seguido de más texto:
+
+```bash
+fichero="informe"
+echo "${fichero}.txt"
+```
+
+La sustitución de órdenes `$(...)` guarda su salida en una variable:
+
+```bash
+equipo=$(hostname)
+ahora=$(date '+%H:%M')
+```
+
+`read` obtiene datos de la entrada estándar. `-r` evita que las barras invertidas se interpreten como escapes y `-p` muestra una pregunta:
+
+```bash
+read -r -p 'Introduce tu nombre: ' nombre
+echo "Hola, $nombre"
+```
+
+Las variables definidas dentro del script solo están disponibles en ese proceso. `export NOMBRE=valor` las convierte en variables de entorno que heredan los procesos hijos. Algunas variables de entorno frecuentes son `HOME`, `USER`, `PATH`, `PWD`, `SHELL` y `HOSTNAME`. `unset nombre` elimina una variable.
+
+---
+
+## 5. Argumentos y variables especiales
+
+Los valores escritos después del nombre del script son sus argumentos posicionales:
+
+| Variable | Significado |
+| :--- | :--- |
+| `$0` | Nombre o ruta con la que se invocó el script. |
+| `$1`, `$2`, ... | Primer argumento, segundo argumento, etc. |
+| `$#` | Número de argumentos recibidos. |
+| `"$@"` | Todos los argumentos, cada uno conservado por separado. |
+| `"$*"` | Todos los argumentos juntos en una sola palabra. |
+| `$?` | Código de salida de la última orden ejecutada. |
+| `$$` | PID del proceso de Bash actual. |
+| `$!` | PID de la última orden ejecutada en segundo plano. |
+
+Valida el número de argumentos antes de usarlos:
+
+```bash
+if [[ $# -ne 1 ]]; then
+  echo "Uso: $0 <fichero>" >&2
+  exit 2
+fi
+
+fichero=$1
+```
+
+Usa `"$@"` para recorrer argumentos que puedan contener espacios:
+
+```bash
+for argumento in "$@"; do
+  echo "Argumento: $argumento"
+done
 ```
 
 ---
 
-## 2. ENTRECOMILLADOS Y SUSTITUCIÓN DE COMANDOS
+## 6. Redirecciones y composición de órdenes
 
-| Sintaxis | Nombre | Qué hace | Ejemplo real | Resultado |
-| :---: | :--- | :--- | :--- | :--- |
-| `' '` | **Comillas simples** | **Literal puro**. No interpreta `$var` ni comandos. | `echo 'Tu usuario es $USER'` | Muestra: `Tu usuario es $USER` |
-| `" "` | **Comillas dobles** | **Expansión**. Sustituye variables y caracteres `\n`. | `echo "Tu usuario es $USER"` | Muestra: `Tu usuario es root` |
-| `` ` ` `` o `$( )` | **Sustitución** | Ejecuta el comando y guarda/muestra su texto. | `FECHA=$(date +%d/%m/%Y)` | Guarda en la variable: `10/11/2026` |
+Los procesos disponen de tres canales habituales:
 
----
-
-## 3. ENTRADA Y SALIDA ESTÁNDAR (ECHO, READ, IFS)
-
-```bash
-# Mostrar texto con echo:
-echo "Hola mundo"                             # Con salto de línea normal al final
-echo -n "Introduce un número: "              # -n: se queda esperando en la misma línea
-echo -e "Primera línea\nSegunda línea\tTab"   # -e: activa los saltos (\n) y tabuladores (\t)
-
-# Leer datos por teclado con read:
-read nombre                                   # Espera a que el usuario escriba y pulse Enter
-read -p "Dime tu ciudad: " ciudad             # Muestra la pregunta antes de pedir el dato
-
-# Cambiar el separador de campos (IFS):
-# Si el usuario escribe "Madrid,Sevilla", guarda "Madrid" en CIUDAD1 y "Sevilla" en CIUDAD2:
-IFS="," read -p "Introduce dos ciudades separadas por coma: " CIUDAD1 CIUDAD2
-```
-
----
-
-## 4. VARIABLES: ASIGNACIÓN, ESPECIALES Y DE ENTORNO
-
-> ⚠️ **REGLA BÁSICA:** Al asignar variables **NUNCA debe haber espacios** junto al `=`.  
-> `EDAD=20` (CORRECTO) | `EDAD = 20` (ERROR FATAL)
-
-### Variables especiales automáticas
-| Variable | Qué contiene | Ejemplo en la práctica |
+| Descriptor | Nombre | Uso |
 | :---: | :--- | :--- |
-| `$0` | Nombre del propio script | Si ejecutas `./menu.sh`, `$0` vale `./menu.sh` |
-| `$1`, `$2` | Parámetros que le pasas al script | Si ejecutas `./script.sh pepe 25`, `$1` es `pepe` y `$2` es `25` |
-| `$#` | Cantidad total de parámetros pasados | En `./script.sh pepe 25`, `$#` vale `2` |
-| `$*` | Todos los parámetros como 1 sola frase | `"pepe 25"` |
-| `$@` | Todos los parámetros separados uno a uno | `"pepe"` `"25"` |
-| `$?` | Resultado del comando anterior | **0 = Todo ha ido bien (éxito)**, **Mayor que 0 = Hubo un error** |
-| `$$` | PID del script en ejecución | Ej: `14250` (número de proceso) |
-| `$RANDOM` | Número aleatorio entre 0 y 32767 | `ALEATORIO=$(( RANDOM % 10 + 1 ))` (da un número del 1 al 10) |
+| `0` | Entrada estándar (`stdin`) | Datos que recibe la orden. |
+| `1` | Salida estándar (`stdout`) | Resultado normal. |
+| `2` | Salida de error (`stderr`) | Avisos y errores. |
 
-### Variables de entorno útiles
-* `$USER` $\rightarrow$ Nombre de tu usuario actual (ej. `alumno` o `root`).
-* `$HOME` $\rightarrow$ Tu carpeta personal (ej. `/home/alumno`).
-* `$PWD` $\rightarrow$ Carpeta en la que te encuentras en este momento.
+Redirecciones frecuentes:
 
----
+| Sintaxis | Efecto |
+| :--- | :--- |
+| `orden > salida.txt` | Guarda la salida estándar y sobrescribe el fichero. |
+| `orden >> salida.txt` | Añade la salida estándar al final del fichero. |
+| `orden < entrada.txt` | Lee la entrada desde un fichero. |
+| `orden 2> errores.txt` | Guarda los errores y sobrescribe el fichero. |
+| `orden 2>> errores.txt` | Añade los errores al fichero. |
+| `orden > salida.txt 2>&1` | Envía ambos canales al mismo destino. |
+| `orden > /dev/null 2>&1` | Descarta la salida normal y los errores. |
 
-## 5. ARITMÉTICA: ENTEROS, DECIMALES Y ALEATORIOS
+El orden de las redirecciones importa. `2>&1` dirige el descriptor 2 al destino que tenga en ese momento el descriptor 1.
+
+La tubería `|` conecta la salida de una orden con la entrada de otra:
 
 ```bash
-# 1. Forma moderna recomendada con $(( ... )):
-A=10
-B=3
-SUMA=$(( A + B ))           # Resultado: 13
-RESTA=$(( A - B ))          # Resultado: 7
-MULTI=$(( A * B ))          # Resultado: 30
-DIVISION=$(( A / B ))       # Resultado: 3 (división entera, sin decimales)
-RESTO=$(( A % B ))          # Resultado: 1 (resto o módulo de dividir 10 entre 3)
-
-# 2. Con let:
-let RESULTADO=A+B
-let CONTADOR++              # Suma 1 a la variable CONTADOR
-
-# 3. Con comando expr (¡Ojo! El * se escapa obligatoriamente con \*):
-RES=$(expr $A + $B)
-RES=$(expr $A \* $B)        # Se pone \* porque si pones * solo, bash busca ficheros
-
-# 4. Operaciones con decimales usando calculadora 'bc':
-# scale=2 indica que queremos 2 decimales:
-MEDIA=$(echo "scale=2; 10 / 3" | bc -l)      # Resultado: 3.33
-
-# 5. Generar número aleatorio en un rango:
-NUM=$(( (RANDOM % 10) + 1 ))                 # Genera un número del 1 al 10
+grep -i 'error' registro.log | wc -l
 ```
 
----
+Otros operadores útiles:
+* `orden1 && orden2` : ejecuta `orden2` solo si `orden1` termina correctamente.
+* `orden1 || orden2` : ejecuta `orden2` solo si `orden1` falla.
+* `orden1 ; orden2` : ejecuta ambas órdenes en secuencia, sin condicionar la segunda.
+* `(...)` : ejecuta las órdenes agrupadas en un subshell.
+* `{ ...; }` : agrupa órdenes en el shell actual; requiere espacios y `;` antes de `}`.
 
-## 6. METACARACTERES Y UTILIDAD BASENAME
-
-### Metacaracteres de control
-```bash
-# ; -> Ejecuta una orden detrás de otra en la misma línea:
-clear ; echo "Pantalla limpia"
-
-# | (pipe) -> Envía la salida de un comando como entrada al siguiente:
-cat /etc/passwd | grep bash
-
-# && (AND) -> Solo se ejecuta la segunda orden si la primera tuvo ÉXITO ($? = 0):
-mkdir prueba && cd prueba
-
-# || (OR) -> Solo se ejecuta la segunda orden si la primera FALLÓ ($? != 0):
-grep "juan" /etc/passwd || echo "El usuario juan no existe en el sistema"
-```
-
-### Utilidad `basename` (limpia rutas de ficheros)
-```bash
-# Quita la ruta y se queda solo con el nombre del archivo:
-FICHERO=$(basename /var/log/syslog)       # Guarda: syslog
-
-# Si además le pasas la extensión, también se la quita:
-NOMBRE=$(basename /home/usuario/foto.png .png) # Guarda: foto
-```
+El estado de una tubería es normalmente el de la última orden. En Bash, `set -o pipefail` hace que la tubería falle si falla alguna de sus órdenes.
 
 ---
 
-## 7. COMPARADORES EN CORCHETES `[ ... ]`
+## 7. Condiciones
 
-> ⚠️ **REGLA DE ORO:** Siempre deja un espacio después de `[` y antes de `]`.  
-> Correcto: `if [ $A -gt $B ]` | Incorrecto: `if [$A -gt $B]`
-
-### Comparar Números Enteros
-| Operador | Significado | Ejemplo práctico |
-| :---: | :--- | :--- |
-| `-eq` | Igual a | `[ $edad -eq 18 ]` *(si edad es igual a 18)* |
-| `-ne` | Distinto de | `[ $opcion -ne 0 ]` *(si opción es distinta de 0)* |
-| `-gt` | Mayor que | `[ $intentos -gt 3 ]` *(si intentos es mayor que 3)* |
-| `-ge` | Mayor o igual | `[ $nota -ge 5 ]` *(si nota es mayor o igual que 5)* |
-| `-lt` | Menor que | `[ $precio -lt 50 ]` *(si precio es menor que 50)* |
-| `-le` | Menor o igual | `[ $hora -le 12 ]` *(si hora es menor o igual que 12)* |
-
-### Comparar Cadenas de Texto
-| Operador | Significado | Ejemplo práctico |
-| :---: | :--- | :--- |
-| `"$A" = "$B"` | Son exactamente iguales | `[ "$respuesta" = "si" ]` |
-| `"$A" != "$B"` | Son diferentes | `[ "$usuario" != "root" ]` |
-| `-z "$A"` | La cadena está vacía | `[ -z "$nombre" ]` *(si no escribió nada)* |
-| `-n "$A"` | La cadena NO está vacía | `[ -n "$nombre" ]` *(si sí tiene texto)* |
-
-### Comprobar Ficheros y Carpetas
-| Operador | Devuelve VERDADERO si... | Ejemplo práctico |
-| :---: | :--- | :--- |
-| `-e fichero` | El archivo o carpeta existe | `[ -e /etc/hosts ]` |
-| `-f fichero` | Existe y es un fichero regular | `[ -f datos.txt ]` |
-| `-d fichero` | Existe y es un directorio / carpeta | `[ -d /home/usuario ]` |
-| `-s fichero` | Existe y NO está vacío (tamaño > 0) | `[ -s copia.log ]` |
-| `-r fichero` | Tiene permiso de lectura | `[ -r informe.txt ]` |
-| `-w fichero` | Tiene permiso de escritura | `[ -w salida.txt ]` |
-| `-x fichero` | Tiene permiso de ejecución | `[ -x script.sh ]` |
-
----
-
-## 8. ESTRUCTURAS CONDICIONALES: IF Y CASE (CON EJEMPLOS CLAROS)
-
-### A. Estructura `if` / `elif` / `else` / `fi`
-* **Qué hace:** Evalúa una condición; si se cumple hace una cosa, si se cumple otra opción hace otra, y si ninguna se cumple entra al `else` ("por defecto").
+El `if` ejecuta bloques según el estado de una orden o prueba. En Bash, el código `0` significa que la condición se cumple; un valor distinto de `0` significa que no se cumple o que se produjo un error.
 
 ```bash
-read -p "Introduce una nota del 1 al 10: " nota
-
-if [ $nota -ge 9 ]; then
-    echo "Sobresaliente"
-elif [ $nota -ge 5 ]; then
-    echo "Aprobado"
+if [[ -d "$directorio" ]]; then
+  echo "Es un directorio"
+elif [[ -e "$directorio" ]]; then
+  echo "Existe, pero no es un directorio"
 else
-    # El 'else' es lo que se ejecuta por defecto si no entró ni en el if ni en el elif:
-    echo "Suspenso"
+  echo "No existe"
 fi
 ```
-* **Explicación línea a línea:**
-  * `if [ $nota -ge 9 ]; then` $\rightarrow$ Comprueba si `$nota` es mayor o igual que 9.
-  * `elif [ $nota -ge 5 ]; then` $\rightarrow$ Si no fue $\ge 9$, comprueba si al menos es $\ge 5$.
-  * `else` $\rightarrow$ Si no fue ni $\ge 9$ ni $\ge 5$, viene aquí automáticamente.
-  * `fi` $\rightarrow$ Marca el final obligatorio del condicional.
+
+`[[ ... ]]` es una construcción de Bash para comprobar cadenas, números y rutas. También existe `[ ... ]` (el comando `test`); en ambos casos los espacios alrededor de los corchetes son obligatorios.
+
+Pruebas frecuentes:
+
+| Prueba | Significado |
+| :--- | :--- |
+| `-e ruta` | La ruta existe. |
+| `-f ruta` | Es un fichero regular. |
+| `-d ruta` | Es un directorio. |
+| `-L ruta` | Es un enlace simbólico. |
+| `-r ruta` | Se puede leer. |
+| `-w ruta` | Se puede escribir. |
+| `-x ruta` | Se puede ejecutar o, si es un directorio, recorrer. |
+| `-s ruta` | Existe y tiene tamaño mayor que cero. |
+
+Para clasificar enlaces simbólicos, comprueba `-L` antes de otras pruebas:
+
+```bash
+if [[ -L "$ruta" ]]; then
+  echo "Enlace simbólico"
+elif [[ -f "$ruta" ]]; then
+  echo "Fichero regular"
+elif [[ -d "$ruta" ]]; then
+  echo "Directorio"
+elif [[ -e "$ruta" ]]; then
+  echo "Existe y es de otro tipo"
+else
+  echo "No existe"
+fi
+```
+
+Comparaciones habituales:
+
+| Tipo | Operadores |
+| :--- | :--- |
+| Cadenas | `==` , `!=` , `-z` (vacía), `-n` (no vacía) |
+| Números enteros | `-eq` , `-ne` , `-lt` , `-le` , `-gt` , `-ge` |
+
+Valida que un dato sea numérico antes de compararlo como número:
+
+```bash
+if [[ ! $limite =~ ^[0-9]+$ ]] || (( limite < 1 || limite > 100 )); then
+  echo "El límite debe ser un entero entre 1 y 100" >&2
+  exit 2
+fi
+```
+
+Una orden también puede ser directamente la condición:
+
+```bash
+if grep -q '^root:' /etc/passwd; then
+  echo "La cuenta root aparece en la base de usuarios"
+fi
+```
+
+`grep -q` no imprime coincidencias: su código de salida indica si encontró alguna.
 
 ---
 
-### B. Estructura `case` / `esac`
-* **Qué hace:** Compara una variable con varios patrones posibles. Es ideal para menús o respuestas de una sola letra.
+## 8. Selección de opciones
+
+### `case`
+
+`case` compara un valor con patrones. Es útil para opciones de línea de comandos y menús:
 
 ```bash
-read -p "Introduce una opción (a, b o s para salir): " letra
-
-case $letra in
-    a|A)
-        echo "Elegiste la opción A"
-        date                     # Muestra la fecha actual del sistema
-        ;;
-    b|B)
-        echo "Elegiste la opción B"
-        whoami                   # Muestra qué usuario tiene la sesión
-        ;;
-    s|S)
-        echo "Saliendo del programa..."
-        exit 0                   # Termina el script
-        ;;
-    *)
-        # El '*' es el caso por defecto: se ejecuta si el usuario escribió cualquier otra cosa:
-        echo "Opción no reconocida. Debes introducir a, b o s."
-        ;;
+case "${1:-}" in
+  iniciar)
+    echo "Iniciando"
+    ;;
+  detener)
+    echo "Deteniendo"
+    ;;
+  *)
+    echo "Uso: $0 {iniciar|detener}" >&2
+    exit 2
+    ;;
 esac
 ```
-* **Explicación de las partes:**
-  * `case $letra in` $\rightarrow$ Le decimos qué variable queremos comprobar (`$letra`).
-  * `a|A)` $\rightarrow$ Si el valor es `a` o `A`. La barra `|` significa "o". El paréntesis `)` cierra el patrón.
-  * `;;` $\rightarrow$ **¡Obligatorio al final de cada caso!** Indica a bash que ya terminó ese bloque.
-  * `*)` $\rightarrow$ El caso comodín (por defecto): si el usuario escribió un número, una `z` o cualquier cosa no contemplada arriba.
-  * `esac` $\rightarrow$ Cierra el `case` (la palabra `case` al revés).
+
+En cada alternativa, `;;` termina el bloque y `*)` representa cualquier otro valor. Los patrones pueden incluir `|` para aceptar varias opciones, por ejemplo `s|S|si|SI)`.
+
+### Menús con `select`
+
+`select` presenta una lista numerada y repite el menú. La elección se guarda en la variable indicada; la entrada escrita por el usuario queda en `REPLY`. `PS3` permite personalizar el indicador:
+
+```bash
+PS3='Elige una opción: '
+select opcion in 'Mostrar fecha' 'Salir'; do
+  case $REPLY in
+    1) date ;;
+    2) break ;;
+    *) echo "Opción incorrecta" ;;
+  esac
+done
+```
+
+Para menús con más control sobre el formato, se puede combinar `while`, `read` y `case`. Antes de borrar o modificar información, solicita confirmación y comprueba la respuesta.
 
 ---
 
-## 9. BUCLES: FOR, WHILE Y UNTIL (CON EJEMPLOS CLAROS)
+## 9. Operaciones aritméticas
 
-### A. Bucle `for` (Recorre elementos de una lista o secuencia)
+Bash realiza operaciones con enteros mediante `$((...))` o `((...))`:
+
 ```bash
-# 1. Recorrer un rango del 1 al 5:
-for numero in 1 2 3 4 5; do
-    echo "Iteración número: $numero"
-done
+base=8
+incremento=3
+total=$((base + incremento))
+resto=$((total % 2))
+echo "Total: $total; resto: $resto"
+```
 
-# 2. Recorrer un rango automático con llaves (del 1 al 10):
-for i in {1..10}; do
-    echo "Contando: $i"
-done
+Operadores habituales: `+`, `-`, `*`, `/` y `%` (resto). Para expresar una operación, conserva los espacios y usa paréntesis cuando ayuden a aclarar el orden. La división de Bash es entera: no conserva decimales.
 
-# 3. Recorrer una secuencia con salto (inicio, incremento, fin):
-# En este ejemplo cuenta de 2 en 2 del 1 al 9: 1, 3, 5, 7, 9
-for valor in $(seq 1 2 9); do
-    echo "Valor: $valor"
-done
+Para decimales se puede usar `bc`, si está instalado:
 
-# 4. Recorrer todos los ficheros .txt de la carpeta actual:
-for archivo in *.txt; do
-    echo "He encontrado el archivo: $archivo"
-done
-
-# 5. Recorrer todos los parámetros pasados al script desde la terminal:
-for parametro in "$@"; do
-    echo "Parámetro recibido: $parametro"
-done
-
-# 6. Bucle estilo C clásico (contador que empieza en 0 hasta 4):
-for (( i=0; i<5; i++ )); do
-    echo "Índice C: $i"
-done
+```bash
+resultado=$(echo 'scale=2; 20.1 / 2.5' | bc -l)
 ```
 
 ---
 
-### B. Bucle `while` (Se repite mientras la condición sea VERDADERA)
+## 10. Bucles
+
+### `for`
+
+`for` ejecuta el bloque una vez por cada valor:
+
+```bash
+for nombre in Ana Luis Marta; do
+  echo "Hola, $nombre"
+done
+```
+
+También se usa para recorrer ficheros que coinciden con un patrón:
+
+```bash
+for fichero in ./*.txt; do
+  [[ -e "$fichero" ]] || continue
+  echo "Encontrado: $fichero"
+done
+```
+
+La comprobación evita procesar literalmente `./*.txt` si no hay coincidencias. `continue` pasa a la siguiente iteración y `break` termina el bucle.
+
+### `while`
+
+`while` repite el bloque mientras la condición termine correctamente:
+
 ```bash
 contador=1
-
-while [ $contador -le 5 ]; do
-    echo "El contador vale: $contador"
-    contador=$(( contador + 1 ))   # Sumamos 1 en cada vuelta para que no sea infinito
+while (( contador <= 5 )); do
+  echo "$contador"
+  contador=$((contador + 1))
 done
 ```
 
-#### Cómo leer un archivo de texto línea a línea con `while`:
+Al procesar un fichero línea a línea, usa `IFS=` y `read -r` para conservar espacios y barras invertidas:
+
 ```bash
-# Lee el archivo /etc/hosts línea por línea y la muestra por pantalla:
-while read linea; do
-    echo "Línea leída: $linea"
-done < /etc/hosts
+while IFS= read -r linea || [[ -n $linea ]]; do
+  echo "Línea: $linea"
+done < entrada.txt
 ```
 
----
+La condición adicional procesa también la última línea si el fichero no acaba en salto de línea. La redirección al final evita que el bucle se ejecute en un subshell y permite conservar contadores modificados dentro de él.
 
-### C. Bucle `until` (Se repite hasta que la condición sea VERDADERA / mientras sea FALSA)
-*A diferencia de `while`, el bucle `until` se sigue repitiendo mientras la condición NO se cumpla:*
-```bash
-palabra=""
+### `until`
 
-until [ "$palabra" = "secreto" ]; do
-    read -p "Introduce la palabra clave para continuar: " palabra
-done
-
-echo "¡Acceso concedido!"
-```
-
----
-
-### D. Romper o saltar vueltas en bucles: `break` y `continue`
-* `break` $\rightarrow$ Detiene el bucle por completo y se sale de él.
-* `continue` $\rightarrow$ Salta lo que quede de esa vuelta y pasa directamente a la siguiente iteración.
-
----
-
-## 10. MENÚS INTERACTIVOS CON `select`
-
-*El comando `select` crea automáticamente una lista numerada en la terminal y se queda esperando que el usuario teclee el número correspondiente:*
+`until` repite mientras la condición falle y termina cuando tiene éxito:
 
 ```bash
-# PS3 es la frase que sale como pregunta para elegir opción:
-PS3="Elige una opción del menú: "
-
-select opcion in "Ver fecha" "Ver usuarios conectados" "Salir"; do
-    case $opcion in
-        "Ver fecha")
-            date
-            ;;
-        "Ver usuarios conectados")
-            who
-            ;;
-        "Salir")
-            echo "Hasta luego"
-            break                      # El break rompe el menú select y sale
-            ;;
-        *)
-            # Si el usuario teclea 8 o letras, $REPLY contiene lo que tecleó:
-            echo "Opción no válida. Tecleaste: $REPLY"
-            ;;
-    esac
+respuesta=''
+until [[ $respuesta == 'salir' ]]; do
+  read -r -p 'Escribe salir para terminar: ' respuesta
 done
 ```
 
+Comprueba siempre que una variable de control cambia dentro del bucle para evitar iteraciones infinitas.
+
 ---
 
-## 11. FUNCIONES Y VARIABLES LOCALES
+## 11. Funciones
 
-*Una función es un bloque de código reutilizable con un nombre:*
+Una función agrupa instrucciones para reutilizarlas. Sus argumentos se reciben como `$1`, `$2`, etc. y son independientes de los argumentos del script que la llama:
 
 ```bash
-# 1. Definición de la función:
-saludar_usuario() {
-    # NOTA: $1 dentro de la función es el primer argumento que le pases A LA FUNCIÓN
-    local nombre_persona=$1           # 'local' asegura que no modifique variables de fuera
-    echo "Hola, bienvenido al script $nombre_persona"
-    return 0                          # Devuelve código 0 (éxito) al script
+mostrar_uso() {
+  echo "Uso: $0 <fichero>" >&2
 }
 
-# 2. Llamada a la función (¡se escribe SIN paréntesis!):
-saludar_usuario "Antonio"
-saludar_usuario "Carlos"
-```
+fichero_legible() {
+  local ruta=$1
+  [[ -f "$ruta" && -r "$ruta" ]]
+}
 
----
-
-## 12. SALIDAS Y CÓDIGOS DE RETORNO (`exit` vs `return`)
-
-* **`exit` $\rightarrow$ Apaga y cierra el script por completo:**
-  * `exit 0` $\rightarrow$ Termina indicando que todo funcionó correctamente.
-  * `exit 1` $\rightarrow$ Termina indicando que ocurrió un error.
-* **`return` $\rightarrow$ Finaliza únicamente una función:**
-  * No detiene el script completo, solo sale de esa función y deja el resultado disponible en la variable `$?`.
-
----
-
-## 13. CAJAS DE DIÁLOGO: `dialog` (CON EJEMPLOS CLAROS)
-
-*El comando `dialog` dibuja ventanas gráficas en la terminal.  
-**Detalle clave:** como la ventana se dibuja en la pantalla, las respuestas escritas por el usuario deben guardarse con `2>fichero_temporal` para luego leerlas.*
-
-### A. Caja de aviso simple (`--msgbox` y `--infobox`)
-```bash
-# Muestra un mensaje y un botón de "Aceptar":
-dialog --msgbox "Operación completada con éxito." 8 40
-
-# Muestra un mensaje breve y desaparece de inmediato:
-dialog --infobox "Cargando datos del sistema..." 5 35
-```
-
-### B. Pregunta de confirmación Sí / No (`--yesno`)
-*Si el usuario elige **Sí**, devuelve un **0**. Si elige **No**, devuelve un **1**:*
-```bash
-dialog --yesno "¿Deseas borrar la carpeta temporal?" 8 40
-
-if [ $? -eq 0 ]; then
-    echo "El usuario pulsó SÍ"
+if fichero_legible "${1:-}"; then
+  echo "El fichero se puede leer"
 else
-    echo "El usuario pulsó NO"
+  mostrar_uso
+  exit 1
 fi
 ```
 
-### C. Pedir un texto por pantalla (`--inputbox`)
+`local` limita una variable a la función. Cada alternativa de un menú puede implementarse en una función distinta para que el flujo principal sea fácil de leer.
+
+`return` termina una función y devuelve un código de estado; no devuelve texto. Para comunicar un resultado lógico, deja que la última orden de la función proporcione su estado, o usa `return 0` para éxito y un valor distinto de cero para fallo. Para guardar el texto que muestra una función, captura su salida:
+
 ```bash
-# Pide un dato y guarda lo que escribe el usuario en /tmp/dato.txt:
-dialog --inputbox "Introduce tu nombre:" 10 35 2>/tmp/dato.txt
+obtener_fecha() {
+  date '+%Y-%m-%d'
+}
 
-# Leemos la respuesta que se guardó en el archivo:
-NOMBRE=$(cat /tmp/dato.txt)
-rm -f /tmp/dato.txt                   # Borramos el temporal
-
-echo "El nombre introducido fue: $NOMBRE"
-```
-
-### D. Crear un menú con opciones (`--menu`)
-```bash
-# Formato: dialog --menu "Título" <alto> <ancho> <nº_opciones> tag1 "desc1" tag2 "desc2" 2>tmp
-dialog --menu "Menú de Mantenimiento" 15 40 3 \
-    1 "Ver espacio en disco" \
-    2 "Ver usuarios del sistema" \
-    3 "Salir" 2>/tmp/opcion_elegida.txt
-
-ELECCION=$(cat /tmp/opcion_elegida.txt)
-rm -f /tmp/opcion_elegida.txt
-
-case $ELECCION in
-    1) df -h ;;
-    2) cat /etc/passwd ;;
-    3) exit 0 ;;
-esac
+fecha=$(obtener_fecha)
 ```
 
 ---
 
-## 14. LAS 7 TRAMPAS DE EXAMEN (EVITA ESTOS ERRORES)
+## 12. Códigos de salida y estructura segura
 
-1. 🚫 **Espacios en asignaciones:**
-   * ❌ `MI_VAR = 10` $\rightarrow$ Bash cree que `MI_VAR` es un programa y da *"orden no encontrada"*.
-   * ✅ `MI_VAR=10` $\rightarrow$ Siempre todo pegado.
-2. 🚫 **Espacios dentro de los corchetes:**
-   * ❌ `if [$A -eq 5]` o `if [ $A -eq 5]` $\rightarrow$ Da error sintáctico.
-   * ✅ `if [ $A -eq 5 ]` $\rightarrow$ Obligatorio dejar espacio tras `[` y antes de `]`.
-3. 🚫 **Comparar números con signos de texto:**
-   * ❌ `if [ $nota == 10 ]` $\rightarrow$ Puede fallar o dar comportamientos extraños.
-   * ✅ `if [ $nota -eq 10 ]` $\rightarrow$ Para enteros usa siempre `-eq`, `-ne`, `-lt`, `-gt`.
-4. 🚫 **Olvidar el `;;` en cada rama de `case`:**
-   * Cada bloque de un `case` DEBE terminar obligatoriamente con dos puntos y coma: `;;`.
-5. 🚫 **No cerrar las estructuras con su palabra al revés:**
-   * `if` se cierra con `fi`.
-   * `case` se cierra con `esac`.
-   * `for`, `while` y `until` se cierran con `done`.
-6. 🚫 **El asterisco en `expr`:**
-   * ❌ `expr 4 * 5` $\rightarrow$ Falla porque `*` se interpreta como comodín de archivos.
-   * ✅ `expr 4 \* 5` o mucho más fácil: `$(( 4 * 5 ))`.
-7. 🚫 **Parámetros en funciones:**
-   * Dentro de una función, `$1` es el argumento pasado **a la función**, no al script general.
+Cada orden y script termina con un código de salida:
+* `0`: éxito.
+* Distinto de `0`: fallo o situación no satisfactoria.
+* `$?`: código de la última orden ejecutada; guárdalo o compruébalo antes de ejecutar otra orden, porque su valor cambia.
+
+`exit n` termina un script con el código indicado. `return n` termina una función. Es habitual reservar códigos distintos para errores diferentes, por ejemplo, argumentos incorrectos, ruta inválida y fallo de una operación.
+
+Un esqueleto de validación:
+
+```bash
+#!/bin/bash
+
+if [[ $# -ne 1 ]]; then
+  echo "Uso: $0 <fichero>" >&2
+  exit 2
+fi
+
+fichero=$1
+if [[ ! -f "$fichero" ]]; then
+  echo "Error: no es un fichero regular: $fichero" >&2
+  exit 1
+fi
+
+if [[ ! -r "$fichero" ]]; then
+  echo "Error: no se puede leer: $fichero" >&2
+  exit 1
+fi
+
+lineas=$(wc -l < "$fichero") || {
+  echo "Error al contar las líneas" >&2
+  exit 1
+}
+
+echo "Líneas: $lineas"
+exit 0
+```
+
+`>&2` envía el mensaje al canal de error. No muestres un mensaje de éxito ni devuelvas `0` antes de comprobar que la operación principal terminó bien.
+
+`set -euo pipefail` puede ayudar a detectar ciertos fallos, pero modifica el comportamiento del script. No sustituye a la validación ni a la comprobación explícita de órdenes: estudia sus efectos, sobre todo en condiciones, funciones, sustituciones y tuberías, antes de usarlo.
+
+---
+
+## 13. Automatización de tareas administrativas
+
+Los boletines aplican estas construcciones a consultas del sistema, análisis de ficheros, menús, usuarios, almacenamiento, recogida de prácticas y copias de seguridad. Al automatizar tareas administrativas:
+
+1. Valida argumentos, rutas, tipos de fichero y permisos antes de actuar.
+2. Usa comillas en rutas y expansiones; no des por supuesto el directorio de trabajo actual.
+3. Comprueba el código de salida de operaciones como `cp`, `mkdir` y `tar`.
+4. Envía los errores a `stderr`, registra las incidencias y resume los resultados de forma veraz.
+5. Antes de sobrescribir, borrar o modificar cuentas, informa de lo que se afectará y solicita confirmación cuando proceda.
+6. Comprueba privilegios solo cuando la operación los requiere. Prueba las tareas de administración en un entorno de prácticas y con datos de prueba.
+
+Para leer registros separados por dos puntos, como `/etc/passwd`, asigna cada campo a una variable:
+
+```bash
+while IFS=: read -r usuario clave uid gid descripcion home shell; do
+  echo "$usuario: UID=$uid, HOME=$home"
+done < /etc/passwd
+```
+
+No guardes contraseñas en texto plano ni las incluyas en scripts o registros. Las prácticas de creación de usuarios deben realizarse en máquinas de laboratorio y con un método autorizado para establecer credenciales.
+
+Para analizar ocupación, `df -P` ofrece una salida adecuada para procesar por líneas. Elimina el encabezado antes de leer los campos y valida el límite numérico antes de compararlo. Recuerda que las unidades de espacio deben ser coherentes: comprueba las unidades que devuelve cada opción de `df`.
+
+Para copias de seguridad, valida el origen y el destino, crea el destino solo si corresponde, decide explícitamente qué hacer si la copia ya existe y comprueba el resultado de `tar` antes de informar de éxito. En la rotación, verifica que la selección conserva las copias más recientes y que cualquier borrado solo afecta a los ficheros esperados.
+
+---
+
+## 14. Menús con `dialog`
+
+`dialog` es una herramienta opcional para crear cuadros y menús en terminal. No forma parte de Bash y debe estar instalada en el sistema. Puede mostrar mensajes, pedir datos y presentar opciones:
+
+```bash
+$ dialog --msgbox "Proceso terminado" 8 40
+$ dialog --yesno "¿Continuar?" 8 40
+```
+
+El código de salida permite distinguir, por ejemplo, entre aceptar y cancelar. Los datos introducidos en cuadros como `--inputbox` se escriben normalmente en `stderr`; redirígelos a un fichero o usa la opción `--stdout` si quieres capturarlos por la salida estándar. Comprueba siempre el estado devuelto antes de continuar.
+
+---
+
+## 15. Ejercicios propuestos
+
+Hay ejercicios ordenados por dificultad, con soluciones explicadas, en `ejercicios.md`. Como práctica adicional, puedes trabajar estos retos sin consultar primero las soluciones:
+
+1. Muestra un informe de sesión con usuario, UID, directorio personal, shell, equipo, fecha y directorio actual.
+2. Crea un clasificador que reciba una ruta e indique si no existe, es un fichero regular, un directorio o un enlace simbólico.
+3. Amplía el clasificador para validar argumentos y permisos y, si recibe un fichero, mostrar líneas, palabras y tamaño.
+4. Diseña un menú repetitivo con una función por opción y confirmación antes de salir o modificar datos.
+5. Analiza el espacio de varios sistemas de ficheros a partir de un umbral validado y devuelve un código de salida distinto si hay alertas.
+6. Diseña una copia de seguridad y pruébala con datos temporales, rutas con espacios, origen inexistente y copia ya existente. Comprueba qué ficheros conserva la rotación antes de permitir cualquier borrado.
+
+---
+
+## 16. Errores frecuentes
+
+### Olvidar los espacios en `[ ]`
+
+Los corchetes de `test` son parte de una orden y deben separarse de sus argumentos:
+
+```bash
+# Incorrecto
+if [ "$numero" -gt10 ]; then
+  echo "Mayor que diez"
+fi
+
+# Correcto
+if [ "$numero" -gt 10 ]; then
+  echo "Mayor que diez"
+fi
+```
+
+### Usar variables sin comillas
+
+Sin comillas, Bash puede dividir un valor por espacios y expandir caracteres comodín. Cita variables que contienen rutas o texto:
+
+```bash
+# Puede fallar si la ruta contiene espacios
+if [[ -f $fichero ]]; then
+  cat $fichero
+fi
+
+# Conserva la ruta como un solo argumento
+if [[ -f "$fichero" ]]; then
+  cat "$fichero"
+fi
+```
+
+### No comprobar los argumentos
+
+Acceder a `$1` no garantiza que el usuario haya proporcionado un argumento. Comprueba primero `$#` y muestra el uso por `stderr` si no coincide con lo esperado:
+
+```bash
+if [[ $# -ne 1 ]]; then
+  echo "Uso: $0 <fichero>" >&2
+  exit 2
+fi
+```
+
+### Confundir el estado de una orden con su salida
+
+`$?` guarda el código de salida de la última orden; no su texto. Compruébalo inmediatamente, porque otra orden lo cambia. En una condición, es más claro comprobar directamente la orden:
+
+```bash
+if grep -q '^root:' /etc/passwd; then
+  echo "Se ha encontrado root"
+else
+  echo "No se ha encontrado root"
+fi
+```
+
+### No actualizar la variable de control de un bucle
+
+Un bucle `while` puede no terminar nunca si la condición sigue siendo cierta. Actualiza el contador en cada iteración:
+
+```bash
+numero=1
+while [[ $numero -le 3 ]]; do
+  echo "$numero"
+  numero=$((numero + 1))
+done
+```
+
+### Contar el contenido en vez de acumularlo
+
+Si en cada iteración asignas el nuevo valor al total, se pierde el resultado anterior. Para contar, incrementa el acumulador:
+
+```bash
+total=0
+for nombre in Ana Luis Marta; do
+  total=$((total + 1))
+done
+echo "Total: $total"
+```
+
+### Suponer que una copia o un borrado siempre funciona
+
+Que `cp`, `tar` o `rm` no produzcan el resultado esperado debe reflejarse en el código de salida y en el mensaje. Valida las rutas antes de actuar y comprueba el estado de la operación antes de informar de éxito. Practica siempre sobre ficheros temporales, no sobre datos del sistema.
+
+---
+
+## 17. Comprobaciones habituales en scripts
+
+Antes de ejecutar operaciones críticas en el sistema, un script robusto debe validar el entorno, los permisos y los datos de entrada. A continuación se recogen las comprobaciones esenciales más utilizadas en Bash.
+
+### Comprobar si el usuario es `root`
+
+La variable `$EUID` almacena el identificador de usuario efectivo; para `root` su valor es siempre `0`. Si una tarea administrativa requiere privilegios de superusuario, compruébalo al inicio del script:
+
+```bash
+if [[ $EUID -ne 0 ]]; then
+  echo "Error: este script debe ejecutarse como root (usa sudo)." >&2
+  exit 1
+fi
+```
+
+### Comprobar el número de argumentos recibidos
+
+Verifica `$#` antes de acceder a los parámetros posicionales `$1`, `$2`, etc.:
+
+```bash
+if [[ $# -ne 2 ]]; then
+  echo "Uso: $0 <origen> <destino>" >&2
+  exit 2
+fi
+```
+
+### Comprobar que una variable o argumento no esté vacío
+
+El operador `-z` devuelve verdadero si la cadena tiene longitud cero:
+
+```bash
+if [[ -z "${1:-}" ]]; then
+  echo "Error: el primer argumento no puede estar vacío." >&2
+  exit 2
+fi
+```
+
+### Comprobar existencia, tipo y permisos de ficheros y directorios
+
+Combina las pruebas de archivo para asegurarte de que las rutas existen, son del tipo esperado y disponen de los permisos necesarios:
+
+```bash
+# Fichero regular, legible y no vacío
+if [[ ! -f "$fichero" || ! -r "$fichero" ]]; then
+  echo "Error: el fichero no existe o no se puede leer: $fichero" >&2
+  exit 1
+fi
+
+if [[ ! -s "$fichero" ]]; then
+  echo "Error: el fichero está vacío: $fichero" >&2
+  exit 1
+fi
+
+# Directorio existente y con permiso de escritura
+if [[ ! -d "$directorio" || ! -w "$directorio" ]]; then
+  echo "Error: directorio inválido o sin permiso de escritura: $directorio" >&2
+  exit 1
+fi
+```
+
+### Comprobar que un dato es numérico y está dentro de un rango
+
+Valida mediante expresión regular antes de realizar comparaciones aritméticas:
+
+```bash
+if [[ ! "$puerto" =~ ^[0-9]+$ ]] || (( puerto < 1 || puerto > 65535 )); then
+  echo "Error: el puerto debe ser un entero entre 1 y 65535." >&2
+  exit 2
+fi
+```
+
+### Comprobar si un comando o herramienta está instalado
+
+Usa `command -v` para verificar que una utilidad externa (como `dialog`, `bc` o `rsync`) está disponible antes de llamarla:
+
+```bash
+if ! command -v dialog > /dev/null 2>&1; then
+  echo "Error: la herramienta 'dialog' no está instalada en el sistema." >&2
+  exit 1
+fi
+```
+
+### Comprobar si existe un usuario o si un servicio está activo
+
+En tareas de administración es habitual verificar cuentas del sistema o el estado de demonios antes de actuar:
+
+```bash
+# Comprobar existencia de usuario
+if ! id "$usuario" > /dev/null 2>&1; then
+  echo "Error: el usuario '$usuario' no existe." >&2
+  exit 1
+fi
+
+# Comprobar si un servicio está activo
+if ! systemctl is-active --quiet ssh; then
+  echo "Aviso: el servicio ssh no se encuentra activo." >&2
+fi
+```
+
+### Comprobar el resultado de una orden crítica
+
+Evalúa directamente el éxito de órdenes como `mkdir`, `cp` o `tar` para detener el script si algo falla:
+
+```bash
+if ! mkdir -p "$destino"; then
+  echo "Error: no se pudo crear el directorio $destino." >&2
+  exit 1
+fi
+```
+
+---
+
+## Resumen de comprobaciones clave
+
+| Comprobación | Expresión / Orden | Código sugerido |
+| :--- | :--- | :---: |
+| Ejecución como `root` | `[[ $EUID -ne 0 ]]` | `exit 1` |
+| Número de argumentos | `[[ $# -ne N ]]` | `exit 2` |
+| Cadena o variable vacía | `[[ -z "$var" ]]` | `exit 2` |
+| Fichero regular y legible | `[[ ! -f "$f" \|\| ! -r "$f" ]]` | `exit 1` |
+| Fichero con contenido (> 0 B) | `[[ ! -s "$f" ]]` | `exit 1` |
+| Directorio con escritura | `[[ ! -d "$d" \|\| ! -w "$d" ]]` | `exit 1` |
+| Entero positivo válido | `[[ ! "$n" =~ ^[0-9]+$ ]]` | `exit 2` |
+| Comando instalado | `! command -v cmd >/dev/null 2>&1` | `exit 1` |
+| Usuario existente | `! id "$usr" >/dev/null 2>&1` | `exit 1` |
